@@ -14,6 +14,7 @@
 
 void init_GL(int argc, char *argv[]);
 void init();
+void init_CV();
 void set_callback_functions();
 
 void glut_display();
@@ -24,13 +25,17 @@ void glut_idle();
 void draw_pyramid();
 void set_texture();
 
-// グローバル変数
+// グローバル変数 opengl
 double g_angle1 = 0.0;
 double g_angle2 = -3.141592 / 6;
 double g_distance = 10.0;
 bool g_isLeftButtonOn = false;
 bool g_isRightButtonOn = false;
 GLuint g_TextureHandles[3] = {0,0,0};
+
+//opencv
+cv::Mat   frame;
+cv::VideoCapture cap;
 
 int main(int argc, char *argv[]){
   /* OpenGLの初期化 */
@@ -54,8 +59,13 @@ void init_GL(int argc, char *argv[]){
   glutInitWindowSize(WINDOW_X,WINDOW_Y);
   glutCreateWindow(WINDOW_NAME);
 }
-
+void init_CV(){
+  cap.open(0);
+  cap>>frame;
+}
 void init(){
+  init_CV();
+  //opengl
   glClearColor(0.2, 0.2, 0.2, 0.2);
   glGenTextures(3,g_TextureHandles);
   
@@ -67,7 +77,7 @@ void init(){
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
   }
 
-  set_texture();
+  //set_texture();
 }
 
 void set_callback_functions(){
@@ -158,6 +168,15 @@ void glut_display(){
 void glut_idle(){
   static int counter = 0;
 
+  //cv
+  cap>>frame;
+  cv::Mat input=frame;
+  cv::cvtColor(input,input,CV_BGR2RGB);
+  glBindTexture(GL_TEXTURE_2D,0);
+  glBindTexture(GL_TEXTURE_2D,g_TextureHandles[0]);
+  glTexSubImage2D(GL_TEXTURE_2D,0,(TEXTURE_WIDTH-input.cols)/2,(TEXTURE_HEIGHT-input.rows)/2,input.cols,input.rows,GL_RGB,GL_UNSIGNED_BYTE,input.data);
+glBindTexture(GL_TEXTURE_2D,g_TextureHandles[0]);
+  /*
   if(counter == 0){
     glBindTexture(GL_TEXTURE_2D,g_TextureHandles[0]);
 					    
@@ -169,7 +188,7 @@ void glut_idle(){
   printf("%d\n",counter);
   counter++;
   if(counter > 1000) counter = 0;
-
+  */
   glutPostRedisplay();
 }
 
@@ -180,20 +199,6 @@ void draw_pyramid(){
   GLdouble pointC[] = {-1.5, -1.0, -1.5};
   GLdouble pointD[] = {1.5, -1.0, -1.5};
   
-  glPushMatrix();
-  glBindTexture(GL_TEXTURE_2D,g_TextureHandles[0]);
-
-  glEnable(GL_TEXTURE_2D);
-  glColor3d(1.0, 0.0, 1.0);
-  glBegin(GL_TRIANGLES);
-  glTexCoord2d(0, 0.0); 
-  glVertex3dv(pointO);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3dv(pointA);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3dv(pointB);
-  glEnd();
-  glDisable(GL_TEXTURE_2D);
   
   glColor3d(1.0, 0.0, 0.0);
   glBegin(GL_TRIANGLES);
@@ -201,20 +206,6 @@ void draw_pyramid(){
   glVertex3dv(pointA);
   glVertex3dv(pointB);
   glEnd();
-
-  glPopMatrix();
-  
-  glEnable(GL_TEXTURE_2D);
-  glColor3d(1.0, 0.0, 1.0);
-  glBegin(GL_TRIANGLES);
-  glTexCoord2d(0, 0.0); 
-  glVertex3dv(pointO);
-  glTexCoord2d(1.0, 0.0);
-  glVertex3dv(pointB);
-  glTexCoord2d(1.0, 1.0);
-  glVertex3dv(pointC);
-  glEnd();
-  glDisable(GL_TEXTURE_2D);
 
   glColor3d(1.0, 1.0, 0.0);
   glBegin(GL_TRIANGLES);
@@ -232,7 +223,6 @@ void draw_pyramid(){
   glEnd();
   
   glPushMatrix();
-  glBindTexture(GL_TEXTURE_2D,g_TextureHandles[1]);
   glColor3d(1.0, 0.0, 1.0);
   glBegin(GL_TRIANGLES);
   glVertex3dv(pointO);
@@ -269,3 +259,4 @@ void set_texture(){
     
   }    
 }
+
